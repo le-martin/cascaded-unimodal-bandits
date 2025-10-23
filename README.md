@@ -11,7 +11,7 @@
 
 This repository is accompanying the paper *"WiFi-CUTS: Rate Adaptation with Cascaded Unimodal Multi-Armed Bandits in IEEE 802.11ac Testbed Experiments"* (M. Le, B. Peng, E. A. Jorswieck. MONTH, IEEE Transaction on Communications. DOI-LINK).
 
-It provides an interactive and guided version of running the numerical simulations and plotting of the regret/reward performance of the proposed Cascaded Unimodal Thompson Sampling (CUTS).
+It provides an interactive and guided framework for reproducing the numerical simulations and visualizing the regret and reward performance of the Cascaded Unimodal Thompson Sampling (CUTS) algorithm proposed in our research paper.
 
 
 ## File List
@@ -51,18 +51,18 @@ This will install all the needed packages which are listed in the requirements
 file.
 
 
-For fast, guided and interactive CUTS simulations and visualization of their reward/regret performance, you can run the Marimo notebooks with
+For fast, guided, and interactive CUTS simulations and visualization of their reward and regret performance, run the Marimo notebooks provided with
 ```bash
 marimo run Interactive.py
 ```
 
-You can also manually run numerical simulation of CUTS by running
+You can also manually run the numerical simulations of CUTS by running
 ```bash
 bash run.sh
 ```
-The used bandit and graph parameters are defined in `run.sh`. Adjust them to obtain CUTS performance results for different parameter sets.
+The used bandit and graph parameters are defined as variables in `run.sh`. Please adjust them to obtain CUTS performance results for different parameter sets.
 
-The simulation results are saved in the folder `simdata`. To plot the regret/reward performance of CUTS for different parameter sets, adjust the parameter sets / scenarios to compare with each other and run
+The simulation results are saved in the folder `simdata`. To plot and compare the CUTS regret/reward performances of different parameter sets, adjust the parameter sets / scenarios to compare them with each other and run
 ```bash
 python3 plot_multi.py
 ```
