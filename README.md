@@ -1,6 +1,6 @@
 # WiFi-CUTS: Rate Adaptation with Cascaded Unimodal Multi-Armed Bandits in IEEE 802.11ac Testbed Experiments
 
-[![Open with marimo](https://marimo.io/shield.svg)](https://marimo.app/?src=https%3A%2F%2Fgithub.com%2Fle-martin%2Fcascaded-unimodal-bandits%2Fblob%2Fmaster%2FInteractive.py)
+[![Open with marimo](https://marimo.io/shield.svg)](https://marimo.app/l/ea2b05)
 ![GitHub](https://img.shields.io/github/license/le-martin/cascaded-unimodal-bandits)
 <!-- [![DOI](https://img.shields.io/badge/doi-10.1109/TWC.2022.3172760-informational)]() -->
 
@@ -9,7 +9,7 @@
 ! Update badge information/links
 ```
 
-This repository is accompanying the paper "WiFi-CUTS: Rate Adaptation with Cascaded Unimodal Multi-Armed Bandits in IEEE 802.11ac Testbed Experiments" (M. Le, B. Peng, E. A. Jorswieck. MONTH, IEEE Transaction on Communications. DOI-LINK).
+This repository is accompanying the paper *"WiFi-CUTS: Rate Adaptation with Cascaded Unimodal Multi-Armed Bandits in IEEE 802.11ac Testbed Experiments"* (M. Le, B. Peng, E. A. Jorswieck. MONTH, IEEE Transaction on Communications. DOI-LINK).
 
 It provides an interactive and guided version of running the numerical simulations and plotting of the regret/reward performance of the proposed Cascaded Unimodal Thompson Sampling (CUTS).
 
@@ -26,7 +26,7 @@ The following files are provided in this repository:
 ## Usage
 ### Running it online
 The easiest way is to use the official [marimo](https://marimo.app/) playground
-to run the notebook online. Simply navigate to [https://marimo.app/?src=https%3A%2F%2Fgithub.com%2Fle-martin%2Fcascaded-unimodal-bandits%2Fblob%2Fmaster%2FInteractive.py](https://marimo.app/?src=https%3A%2F%2Fgithub.com%2Fle-martin%2Fcascaded-unimodal-bandits%2Fblob%2Fmaster%2FInteractive.py)
+to run the notebook online. Simply navigate to [https://marimo.app/l/ea2b05](https://marimo.app/l/ea2b05)
 to run the notebooks in your browser without setting everything up locally.
 
 ### Local Installation
@@ -62,7 +62,10 @@ bash run.sh
 ```
 The used bandit and graph parameters are defined in `run.sh`. Adjust them to obtain CUTS performance results for different parameter sets.
 
-The simulation results are saved in the folder `simdata`. To plot the regret/reward performance of CUTS for different parameter sets, adjust the parameter sets / scenarios to compare with each other and run `python3 plot_multi.py`.
+The simulation results are saved in the folder `simdata`. To plot the regret/reward performance of CUTS for different parameter sets, adjust the parameter sets / scenarios to compare with each other and run
+```bash
+python3 plot_multi.py
+```
 
 
 ## Acknowledgements
