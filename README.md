@@ -1,4 +1,4 @@
-# Template for Reproducible Research Papers
+# WiFi-CUTS: Rate Adaptation with Cascaded Unimodal Multi-Armed Bandits in IEEE 802.11ac Testbed Experiments
 
 [![Marimo](https://img.shields.io/badge/Launch-Marimo_notebook-hsl(168%2C61%25%2C28%25))](https://marimo.app/?src=https%3A%2F%2Fraw.githubusercontent.com%2Fklb2%2Freproducible-paper-python-template%2Frefs%2Fheads%2Fmaster%2FInteractive.py)
 ![GitHub](https://img.shields.io/github/license/klb2/reproducible-paper-python-template)
@@ -9,47 +9,19 @@
 ! Update badge information/links
 ```
 
-This repository provides a template for Python code that is accompanying a
-research paper.
-Most likely, this will be an implementation of an algorithm and/or simulation
-results.
+This repository is accompanying the paper "WiFi-CUTS: Rate Adaptation with Cascaded Unimodal Multi-Armed Bandits in IEEE 802.11ac Testbed Experiments" (M. Le, B. Peng, E. A. Jorswieck. MONTH, IEEE Transaction on Communications. DOI-LINK).
 
-The code should be made publicly accessible in order to allow everybody to
-reproduce the results presented in the paper.
-
-You can use this template/fork it and use it as a starting point. You find a
-basic structure in `main.py`, where only need to add your custom code.
-This README also already contains all important information and you only need
-to adjust the parts specific to your project.
-The `run.sh` script should contain the exact commands that you used to generate
-the results/plots in your paper. In particular, you should make sure to specify
-all of the parameters.
-
-The proposed structure of the README is
-1. Information about the paper (title, authors, journal/conference, DOI, arXiv)
-2. File list of all files that are provided in the repository (with short
-   description)
-3. Usage description. If you provide Jupyter notebooks this can also include a
-   link to Binder.
-4. Acknowledgements (funding information, ...)
-5. License and Referencing (description of license and how to cite your work,
-   e.g., the bibtex entry of your paper)
-
-You can find some general ideas on the structure and required aspects of the
-repository in [this blog
-post](https://klb2.gitlab.io/writing/python/2021/12/20/reproducible-papers.html)
-(independent of the used programming language).
+It provides an interactive and guided version of running the numerical simulations and plotting of the regret/reward performance of the proposed Cascaded Unimodal Thompson Sampling (CUTS).
 
 
 ## File List
 The following files are provided in this repository:
 
-- `run.sh`: Bash script that reproduces the figures presented in the paper.
-- `util.py`: Python module that contains utility functions, e.g., for saving results.
-```diff
-- `main.py`: Python script that...
-- ...
-```
+- `run.sh`: Bash script that runs numerical simulations CUTS with user-defined parameters. The results are saved in the `simdata` folder and can be plotted with the `plot_multi.py` script.
+- `plot-multi.py`: Python script for plotting CUTS with different parameter sets for comparison.
+- `simdata`: Folder containing all simulation data including realized regret and graph data.
+- `Interactive.py`: Marimo notebook for fast, guided and interactive numerical simulation of CUTS and performance simulation for comparison of CUTS variants.
+
 
 ## Usage
 ### Running it online
