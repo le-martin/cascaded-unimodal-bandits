@@ -211,142 +211,6 @@ def _(
     return
 
 
-@app.cell(hide_code=True)
-def _():
-    from itertools import product, cycle
-    import os
-
-    import marimo as mo
-    import matplotlib.pyplot as plt
-    import numpy as np
-
-    from cuts import (
-        CascadingUnimodalBandit,
-        CUTS,
-        create_or_load_graph,
-        assign_success_probabilities,
-        generate_filename,
-        run_and_save_simulation_data,
-        get_params_from_filename
-    )
-    from plot_multi import (
-        write_graphdata_to_csv,
-        map_plot_labels
-    )
-
-    @mo.cache
-    def load_and_plot_individual_simulation_data(base_filename, algorithm_names, save_as=None):
-        plt.figure(figsize=(12, 8))
-        for name in algorithm_names:
-            alg_filename = base_filename.format(name=name) + ".npz"
-            # Check if the file exists
-            if os.path.isfile(alg_filename):
-                # Load data
-                data = np.load(alg_filename, allow_pickle=True)
-                avg_cumulative_regret = data['avg_cumulative_regret']
-                percentile_2_5 = data['percentile_2_5']
-                percentile_97_5 = data['percentile_97_5']
-
-                # Plot the mean cumulative regret with a shaded area for the 95% confidence interval
-                plt.plot(avg_cumulative_regret, label=f"{name} Mean Cumulative Regret")
-                plt.fill_between(range(len(avg_cumulative_regret)), percentile_2_5, percentile_97_5, alpha=0.2)
-            else:
-                print(f"File {alg_filename} not found. Skipping this algorithm.")
-
-        plt.xlabel("Rounds")
-        plt.ylabel("Cumulative Regret")
-        plt.title("Cumulative regret performance of CUTS")
-        plt.suptitle(get_params_from_filename(alg_filename))
-        plt.legend()
-        if save_as is not None:
-            plt.savefig(save_as)
-        return plt.gca()
-
-    @mo.cache
-    def plot_from_multiple_simdatafiles(filelist, save_as=None, plot_percentile=True, plot_reward=False):
-        plt.figure(figsize=(12, 8), dpi=300)
-        ax = plt.gca()
-        linestyles = cycle(['-', '--', '-.', ':', (0, (3, 1, 1, 1)), (5, (10, 3)), (0, (5, 10)), (0, (3, 10, 1, 10))])
-        for filename in filelist:
-            # Check if the file exists
-            if os.path.isfile(filename):
-                num_arms, list_size, num_rounds, num_simulations, graph_type = get_params_from_filename(filename)
-                # Load data
-                data = np.load(filename, allow_pickle=True)
-                avg_cumulative_regret = data['avg_cumulative_regret']
-                percentile_2_5 = data['percentile_2_5']
-                percentile_97_5 = data['percentile_97_5']
-                avg_reward = data['avg_reward']
-                percentile_2_5_reward = data['percentile_2_5_reward']
-                percentile_97_5_reward = data['percentile_97_5_reward']
-
-                # Plot the mean cumulative regret with a shaded area for the 95% confidence interval
-                label_tmp = f"CUTS-{graph_type}-{list_size} stages"
-                label = map_plot_labels(label_tmp)
-                if plot_reward:
-                    data = avg_reward
-                else:
-                    data = avg_cumulative_regret
-                plt.plot(
-                    data, 
-                    label=label, 
-                    linestyle=next(linestyles), 
-                    # linewidth=2,
-                )
-                if plot_percentile:
-                    if plot_reward:
-                        plt.fill_between(range(len(avg_reward)), percentile_2_5_reward, percentile_97_5_reward, alpha=0.2)
-                    else:
-                        plt.fill_between(range(len(avg_cumulative_regret)), percentile_2_5, percentile_97_5, alpha=0.2)
-            else:
-                print(f"File {filename} not found. Skipping this file.")
-
-        plt.xlabel("Rounds")
-        if plot_reward:
-            plt.ylabel("Average Reward")
-        else:
-            plt.ylabel("Average Cumulative Regret")
-        plt.title("Cumulative regret performance of CUTS")
-        _plt_lbl_list = ['num_arms', 'num_stages', 'num_rounds', 'num_mcrs']
-        plt.suptitle({_plt_lbl_list[i]: e for i, e in enumerate(get_params_from_filename(filename)) if i in [0, 2, 3]})
-        # plt.legend()
-        # Shrink current axis by 20%
-        box = ax.get_position()
-        ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
-
-        # Put a legend to the right of the current axis
-        ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
-        plt.grid()
-        if save_as is not None:
-            plt.savefig(save_as)
-        return plt.gca()
-
-    @mo.cache
-    def print_missing_sim_warning(missing_sims):
-        attention_str = "/// attention | Attention!\n The following CUTS simulations are missing: \n\n"
-        for filename_tmp3 in missing_sims:
-            arms, stages, rounds, sims, suff = get_params_from_filename(filename_tmp3)
-            attention_str += f"Arms: {arms}, Stages: {stages}, Rounds: {rounds}, Monte Carlo runs: {sims}, Graph information: {suff}\n\n"
-        attention_str += "///"
-        if missing_sims:
-            mo.md(attention_str)
-    return (
-        CUTS,
-        CascadingUnimodalBandit,
-        assign_success_probabilities,
-        create_or_load_graph,
-        generate_filename,
-        get_params_from_filename,
-        load_and_plot_individual_simulation_data,
-        mo,
-        np,
-        os,
-        plot_from_multiple_simdatafiles,
-        product,
-        run_and_save_simulation_data,
-    )
-
-
 @app.cell
 def _(mo):
     mo.md(
@@ -436,6 +300,24 @@ def _(
 
 
 @app.cell(hide_code=True)
+def _(filelist, get_params_from_filename, mo, os):
+    missing_sims = [_file for _file in filelist if not os.path.isfile(_file)]
+    attention_str = "/// attention | Attention!\n The following CUTS simulations are missing: \n\n"
+    for _file in missing_sims:
+        arms, stages, rounds, sims, suff = get_params_from_filename(_file)
+        attention_str += f"Arms: {arms}, Stages: {stages}, Rounds: {rounds}, Monte Carlo runs: {sims}, Graph information: {suff}\n\n"
+    attention_str += "///"
+    if not missing_sims:
+        attention_str = "/// details | All lines were successfully plotted.\n"
+        for _file in filelist:
+            arms, stages, rounds, sims, suff = get_params_from_filename(_file)
+            attention_str += f"Arms: {arms}, Stages: {stages}, Rounds: {rounds}, Monte Carlo runs: {sims}, Graph information: {suff}\n\n"
+        attention_str += "///"
+    mo.md(attention_str)
+    return
+
+
+@app.cell(hide_code=True)
 def _(
     edge_prob_plot_number,
     graph_type_erdos_renyi_checkbox,
@@ -513,22 +395,140 @@ def _(
     return (filelist,)
 
 
-@app.cell(hide_code=True)
-def _(filelist, get_params_from_filename, mo, os):
-    missing_sims = [_file for _file in filelist if not os.path.isfile(_file)]
-    attention_str = "/// attention | Attention!\n The following CUTS simulations are missing: \n\n"
-    for _file in missing_sims:
-        arms, stages, rounds, sims, suff = get_params_from_filename(_file)
-        attention_str += f"Arms: {arms}, Stages: {stages}, Rounds: {rounds}, Monte Carlo runs: {sims}, Graph information: {suff}\n\n"
-    attention_str += "///"
-    if not missing_sims:
-        attention_str = "/// details | All lines were successfully plotted.\n"
-        for _file in filelist:
-            arms, stages, rounds, sims, suff = get_params_from_filename(_file)
+@app.cell
+def _():
+    from itertools import product, cycle
+    import os
+
+    import marimo as mo
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    from cuts import (
+        CascadingUnimodalBandit,
+        CUTS,
+        create_or_load_graph,
+        assign_success_probabilities,
+        generate_filename,
+        run_and_save_simulation_data,
+        get_params_from_filename
+    )
+    from plot_multi import (
+        write_graphdata_to_csv,
+        map_plot_labels
+    )
+
+    @mo.cache
+    def load_and_plot_individual_simulation_data(base_filename, algorithm_names, save_as=None):
+        plt.figure(figsize=(12, 8))
+        for name in algorithm_names:
+            alg_filename = base_filename.format(name=name) + ".npz"
+            # Check if the file exists
+            if os.path.isfile(mo.notebook_dir() / alg_filename):
+                # Load data
+                data = np.load(alg_filename, allow_pickle=True)
+                avg_cumulative_regret = data['avg_cumulative_regret']
+                percentile_2_5 = data['percentile_2_5']
+                percentile_97_5 = data['percentile_97_5']
+
+                # Plot the mean cumulative regret with a shaded area for the 95% confidence interval
+                plt.plot(avg_cumulative_regret, label=f"{name} Mean Cumulative Regret")
+                plt.fill_between(range(len(avg_cumulative_regret)), percentile_2_5, percentile_97_5, alpha=0.2)
+            else:
+                print(f"File {alg_filename} not found. Skipping this algorithm.")
+
+        plt.xlabel("Rounds")
+        plt.ylabel("Cumulative Regret")
+        plt.title("Cumulative regret performance of CUTS")
+        plt.suptitle(get_params_from_filename(alg_filename))
+        plt.legend()
+        if save_as is not None:
+            plt.savefig(save_as)
+        return plt.gca()
+
+    @mo.cache
+    def plot_from_multiple_simdatafiles(filelist, save_as=None, plot_percentile=True, plot_reward=False):
+        plt.figure(figsize=(12, 8), dpi=300)
+        ax = plt.gca()
+        linestyles = cycle(['-', '--', '-.', ':', (0, (3, 1, 1, 1)), (5, (10, 3)), (0, (5, 10)), (0, (3, 10, 1, 10))])
+        for filename in filelist:
+            # Check if the file exists
+            if os.path.isfile(mo.notebook_dir() / filename):
+                num_arms, list_size, num_rounds, num_simulations, graph_type = get_params_from_filename(filename)
+                # Load data
+                data = np.load(filename, allow_pickle=True)
+                avg_cumulative_regret = data['avg_cumulative_regret']
+                percentile_2_5 = data['percentile_2_5']
+                percentile_97_5 = data['percentile_97_5']
+                avg_reward = data['avg_reward']
+                percentile_2_5_reward = data['percentile_2_5_reward']
+                percentile_97_5_reward = data['percentile_97_5_reward']
+
+                # Plot the mean cumulative regret with a shaded area for the 95% confidence interval
+                label_tmp = f"CUTS-{graph_type}-{list_size} stages"
+                label = map_plot_labels(label_tmp)
+                if plot_reward:
+                    data = avg_reward
+                else:
+                    data = avg_cumulative_regret
+                plt.plot(
+                    data, 
+                    label=label, 
+                    linestyle=next(linestyles), 
+                    # linewidth=2,
+                )
+                if plot_percentile:
+                    if plot_reward:
+                        plt.fill_between(range(len(avg_reward)), percentile_2_5_reward, percentile_97_5_reward, alpha=0.2)
+                    else:
+                        plt.fill_between(range(len(avg_cumulative_regret)), percentile_2_5, percentile_97_5, alpha=0.2)
+            else:
+                print(f"File {filename} not found. Skipping this file.")
+
+        plt.xlabel("Rounds")
+        if plot_reward:
+            plt.ylabel("Average Reward")
+        else:
+            plt.ylabel("Average Cumulative Regret")
+        plt.title("Cumulative regret performance of CUTS")
+        _plt_lbl_list = ['num_arms', 'num_stages', 'num_rounds', 'num_mcrs']
+        plt.suptitle({_plt_lbl_list[i]: e for i, e in enumerate(get_params_from_filename(filename)) if i in [0, 2, 3]})
+        # plt.legend()
+        # Shrink current axis by 20%
+        box = ax.get_position()
+        ax.set_position([box.x0, box.y0, box.width * 0.8, box.height])
+
+        # Put a legend to the right of the current axis
+        ax.legend(loc='center left', bbox_to_anchor=(1, 0.5))
+        plt.grid()
+        if save_as is not None:
+            plt.savefig(save_as)
+        return plt.gca()
+
+    @mo.cache
+    def print_missing_sim_warning(missing_sims):
+        attention_str = "/// attention | Attention!\n The following CUTS simulations are missing: \n\n"
+        for _filename in missing_sims:
+            arms, stages, rounds, sims, suff = get_params_from_filename(_filename)
             attention_str += f"Arms: {arms}, Stages: {stages}, Rounds: {rounds}, Monte Carlo runs: {sims}, Graph information: {suff}\n\n"
         attention_str += "///"
-    mo.md(attention_str)
-    return
+        if missing_sims:
+            mo.md(attention_str)
+    return (
+        CUTS,
+        CascadingUnimodalBandit,
+        assign_success_probabilities,
+        create_or_load_graph,
+        generate_filename,
+        get_params_from_filename,
+        load_and_plot_individual_simulation_data,
+        mo,
+        np,
+        os,
+        plot_from_multiple_simdatafiles,
+        product,
+        run_and_save_simulation_data,
+    )
 
 
 if __name__ == "__main__":

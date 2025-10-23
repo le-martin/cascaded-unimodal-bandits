@@ -1,7 +1,7 @@
 # WiFi-CUTS: Rate Adaptation with Cascaded Unimodal Multi-Armed Bandits in IEEE 802.11ac Testbed Experiments
 
 [![Marimo](https://img.shields.io/badge/Launch-Marimo_notebook-hsl(168%2C61%25%2C28%25))](https://marimo.app/?src=https%3A%2F%2Fgithub.com%2Fle-martin%2Fcascaded-unimodal-bandits%2Fblob%2Fmaster%2FInteractive.py)
-<!-- ![GitHub](https://img.shields.io/github/license/klb2/reproducible-paper-python-template) -->
+![GitHub](https://img.shields.io/github/license/le-martin/cascaded-unimodal-bandits)
 <!-- [![DOI](https://img.shields.io/badge/doi-10.1109/TWC.2022.3172760-informational)]() -->
 
 
