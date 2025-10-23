@@ -320,13 +320,18 @@ def _(filelist, get_params_from_filename, mo, os):
 @app.cell(hide_code=True)
 def _(
     edge_prob_plot_number,
+    graph_type,
     graph_type_erdos_renyi_checkbox,
     graph_type_full_checkbox,
     graph_type_line_checkbox,
+    list_size,
     mo,
+    num_arms,
     num_arms_plot_number,
     num_monte_carlo_runs_plot_number,
+    num_rounds,
     num_rounds_plot_number,
+    num_simulations,
     plot_from_multiple_simdatafiles,
     plot_percentile_dropdown,
     plot_reward_dropdown,
@@ -375,7 +380,7 @@ def _(
         list_sizes.append(4)
 
     # Generate the simdata filenames to plot
-    regret_base_file = "simdata/CUTS_rounds{num_rounds}_mcr{num_simulations}_arms{num_arms}_list{list_size}_{graph_type}.npz"
+    regret_base_file = f"{mo.notebook_dir()}/simdata/CUTS_rounds{num_rounds}_mcr{num_simulations}_arms{num_arms}_list{list_size}_{graph_type}.npz"
     filelist = []
 
     # DEBUG
@@ -395,7 +400,7 @@ def _(
     return (filelist,)
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _():
     from itertools import product, cycle
     import os
