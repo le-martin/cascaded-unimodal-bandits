@@ -4,7 +4,7 @@ __generated_with = "0.17.0"
 app = marimo.App(width="columns")
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(
         r"""
@@ -22,7 +22,7 @@ def _(mo):
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(
         r"""
@@ -211,7 +211,7 @@ def _(
     return
 
 
-@app.cell
+@app.cell(hide_code=True)
 def _(mo):
     mo.md(
         """
@@ -230,7 +230,7 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     # Bandit parameters UI elements
-    num_arms_plot_number = mo.ui.number(2, 1000, value=232, label="Number of arms (min:2, max: 1000): ")
+    num_arms_plot_number = mo.ui.number(2, 1000, value=232, label="Number of arms (min: 2, max: 1000): ")
     num_rounds_plot_number = mo.ui.number(10, 5000, value=2000, label="Number of rounds (min: 10, max: 5000): ")
     num_monte_carlo_runs_plot_number = mo.ui.number(1, 10000, value=10000, label="Number of Monte Carlo runs (min: 1, max: 10000): ")
     stage_1_checkbox = mo.ui.checkbox(value=True, label="1")
@@ -320,18 +320,13 @@ def _(filelist, get_params_from_filename, mo, os):
 @app.cell(hide_code=True)
 def _(
     edge_prob_plot_number,
-    graph_type,
     graph_type_erdos_renyi_checkbox,
     graph_type_full_checkbox,
     graph_type_line_checkbox,
-    list_size,
     mo,
-    num_arms,
     num_arms_plot_number,
     num_monte_carlo_runs_plot_number,
-    num_rounds,
     num_rounds_plot_number,
-    num_simulations,
     plot_from_multiple_simdatafiles,
     plot_percentile_dropdown,
     plot_reward_dropdown,
@@ -380,7 +375,7 @@ def _(
         list_sizes.append(4)
 
     # Generate the simdata filenames to plot
-    regret_base_file = f"{mo.notebook_dir()}/simdata/CUTS_rounds{num_rounds}_mcr{num_simulations}_arms{num_arms}_list{list_size}_{graph_type}.npz"
+    regret_base_file = str(mo.notebook_dir() / "simdata" / "CUTS_rounds{num_rounds}_mcr{num_simulations}_arms{num_arms}_list{list_size}_{graph_type}.npz")
     filelist = []
 
     # DEBUG
@@ -401,27 +396,22 @@ def _(
 
 
 @app.cell(hide_code=True)
-def _():
+def _(best_4_pairs, write_csv_file_multiple):
+    from functools import cache
+    import heapq
     from itertools import product, cycle
     import os
+    import pickle
+    import random
+    import time
+    import tqdm
+    from typing import List
 
     import marimo as mo
     import matplotlib.pyplot as plt
+    import networkx as nx
     import numpy as np
 
-    from cuts import (
-        CascadingUnimodalBandit,
-        CUTS,
-        create_or_load_graph,
-        assign_success_probabilities,
-        generate_filename,
-        run_and_save_simulation_data,
-        get_params_from_filename
-    )
-    from plot_multi import (
-        write_graphdata_to_csv,
-        map_plot_labels
-    )
 
     @mo.cache
     def load_and_plot_individual_simulation_data(base_filename, algorithm_names, save_as=None):
@@ -450,6 +440,7 @@ def _():
         if save_as is not None:
             plt.savefig(save_as)
         return plt.gca()
+
 
     @mo.cache
     def plot_from_multiple_simdatafiles(filelist, save_as=None, plot_percentile=True, plot_reward=False):
@@ -510,6 +501,7 @@ def _():
             plt.savefig(save_as)
         return plt.gca()
 
+
     @mo.cache
     def print_missing_sim_warning(missing_sims):
         attention_str = "/// attention | Attention!\n The following CUTS simulations are missing: \n\n"
@@ -519,6 +511,507 @@ def _():
         attention_str += "///"
         if missing_sims:
             mo.md(attention_str)
+
+
+    class CascadingUnimodalBandit:
+        def __init__(self, G, num_items, list_size, means=None, rng=None):
+            self.G = G
+            self.num_items = num_items
+            self.list_size = list_size
+            self.rate_to_node = {rate: node for node, rate in enumerate(G.nodes)}
+            if means is None:
+                self.means = np.array(
+                    rng.random(num_items)
+                )  # True but unknown click probabilities
+                self.given_means = False
+            elif isinstance(means, list):
+                self.given_means = True
+                self.means = np.array(means)
+            elif isinstance(means, dict):
+                self.given_means = True
+                self.means = np.zeros(G.number_of_nodes())
+                for node, mean in means.items():
+                    self.means[self.rate_to_node[node]] = mean
+
+
+    class CUTS:
+        def __init__(self, G, num_items, list_size, reward_scaling=None):
+            self.G = G
+            self.num_items = num_items
+            self.list_size = list_size
+            # Initialize Beta parameters for each item
+            self.alpha = np.ones(
+                num_items
+            )  # Alpha parameter of Beta distribution (success count)
+            self.beta = np.ones(
+                num_items
+            )  # Beta parameter of Beta distribution (failure count)
+            self.leader_counts = {node: 0 for node in G.nodes}
+            self.counts = np.zeros(num_items)
+            self.empirical_means = np.zeros(num_items)
+            self.reward_scaling = reward_scaling
+
+        def thompson_sample(self, node):
+            """Draw a sample from the Beta distribution for a given node."""
+            return np.random.beta(self.alpha[node], self.beta[node])
+
+        @cache
+        def get_extended_neighbors(self, start, depth):
+            visited = {start}
+            frontier = {start}
+
+            for _ in range(depth):
+                next_frontier = set()
+                for node in frontier:
+                    for neighbor in self.G.neighbors(node):
+                        if neighbor not in visited:
+                            visited.add(neighbor)
+                            next_frontier.add(neighbor)
+                # If there are no more nodes to explore, break early.
+                if not next_frontier:
+                    break
+                frontier = next_frontier
+            return list(visited)
+
+        def select_arms(self, *args, **kwargs):
+            single_hop_exploration = kwargs.get("single_hop_exploration", False)
+            selected_arms = []
+            samples_values = {node: self.thompson_sample(node) for node in self.G.nodes}
+            # Select the top K items with the highest sampled values from the leader's neighborhood
+            if self.reward_scaling is not None:
+                samples_values = {
+                    node: samples_values[node] * self.reward_scaling[node]
+                    for node in self.G.nodes
+                }
+            else:
+                samples_values = {node: samples_values[node] for node in self.G.nodes}
+            if self.counts.sum() == 0:
+                # If no arms have been selected yet, select the leader based on sampled values
+                leader = select_n_largest(samples_values, 1)[0]
+            else:
+                # Select the leader based on empirical means
+                leader = select_n_largest(self.empirical_means, 1)[0]
+            if single_hop_exploration:
+                neighborhood = list(self.G.neighbors(leader)) + [leader]
+            else:
+                neighborhood = self.get_extended_neighbors(leader, self.list_size)
+            samples_values_neigborhood = {
+                node: samples_values[node] for node in neighborhood
+            }
+            # Select the top K items with the highest sampled values
+            # selected_arms = neighborhood[np.argsort(theta_samples_filtered)[-self.list_size:]]
+            selected_arms = select_n_largest(samples_values_neigborhood, self.list_size)
+            return selected_arms
+
+        def update(self, selected_items, feedback, reward_scaling=None):
+            # Update Beta parameters based on observed feedback
+            for idx, item in enumerate(selected_items):
+                self.counts[item] += 1
+                if reward_scaling is not None:
+                    reward = (
+                        reward_scaling[selected_items[feedback]] if feedback != -1 else 0
+                    )
+                else:
+                    reward = 1 if feedback != -1 else 0
+                if feedback == idx:  # User clicked on this item
+                    self.alpha[item] += 1
+                    self.empirical_means[item] = (
+                        self.empirical_means[item] * (self.counts[item] - 1) + reward
+                    ) / self.counts[item]
+                    break
+                else:  # User skipped this item
+                    self.beta[item] += 1
+                    # self.empirical_means = self.alpha / (self.alpha + self.beta)
+                    self.empirical_means[item] = (
+                        self.empirical_means[item] * (self.counts[item] - 1)
+                    ) / self.counts[item]
+
+        def reset(self):
+            """Reset the algorithm parameters for a fresh run."""
+            self.alpha = np.ones(self.num_items)
+            self.beta = np.ones(self.num_items)
+            self.empirical_means = {node: 0 for node in self.G.nodes}
+            self.counts = np.zeros(self.num_items)
+
+
+    def create_or_load_graph(filename, num_nodes, graph_type='erdos-renyi', p=0.5, labels=None, new_graph=False):
+        """
+        Create a graph or load from a file if it already exists.
+
+        Parameters:
+        - filename (str): The file name to save or load the graph.
+        - num_nodes (int): The number of nodes in the graph.
+        - graph_type (str): The type of graph to create ('line' or 'erdos-renyi').
+        - p (float): Probability for edge creation in Erdős-Rényi graph.
+        - new_graph (bool): If True, create a new graph even if the file exists.
+
+        Returns:
+        - G (networkx.Graph): The generated or loaded graph.
+        """
+        if os.path.exists(filename) and not new_graph:
+            print(f"Loading graph from {filename}")
+            with open(filename, 'rb') as f:
+                G = pickle.load(f)
+        else:
+            print(f"Creating a new {graph_type} graph with {num_nodes} nodes")
+            if (graph_type == 'line') or (graph_type == 'line-csv'):
+                G = nx.path_graph(num_nodes)
+            elif graph_type == 'erdos-renyi':
+                G = nx.erdos_renyi_graph(num_nodes, p)
+                while not nx.is_connected(G):
+                    G = nx.erdos_renyi_graph(num_nodes, p)
+            elif graph_type == 'full':
+                G = nx.complete_graph(num_nodes)
+            else:
+                raise ValueError("Unsupported graph type. Use 'line' or 'erdos-renyi'.")
+
+            # Check if folder does not exist
+            folder_path = os.path.dirname(filename)
+            if not os.path.exists(folder_path):
+                # Create the folder (including any necessary parent directories)
+                os.makedirs(folder_path)
+                print(f"Folder created: {folder_path}")
+
+            # Save the graph to a file
+            with open(filename, 'wb') as f:
+                pickle.dump(G, f)
+            print(f"Graph saved to {filename}")
+
+        return G
+
+
+    def assign_success_probabilities(G, max_prob=0.9, min_prob=0.1):
+        """
+        Assign success probabilities to each node in the graph based on its distance
+        from an optimal arm.
+
+        Parameters:
+        - G (networkx.Graph): The graph representing the MAB structure.
+        - max_prob (float): Maximum success probability for the optimal arm.
+        - min_prob (float): Minimum success probability for the farthest arm.
+
+        Returns:
+        - success_probabilities (dict): A dictionary with nodes as keys and success probabilities as values.
+        """
+        # Randomly select the optimal arm
+        optimal_arm = random.choice(list(G.nodes))
+        nx.set_node_attributes(G, {optimal_arm: {"optimal": True}})
+        print(f"Optimal Arm: {optimal_arm}")
+
+        # Calculate shortest path distances from the optimal arm
+        shortest_paths = nx.single_source_shortest_path_length(G, optimal_arm)
+        max_distance = max(shortest_paths.values())
+
+        # Calculate success probabilities
+        success_probabilities = {}
+        for node, distance in shortest_paths.items():
+            # Linear decay from max_prob to min_prob based on distance
+            success_prob = max_prob - (distance / max_distance) * (max_prob - min_prob)
+            success_probabilities[node] = success_prob
+            G.nodes[node]["success_prob"] = (
+                success_prob  # Add as a node attribute for easy access
+            )
+
+        return success_probabilities
+
+
+    def generate_filename(
+        prefix, num_items, list_size, num_rounds, num_simulations, suffix
+    ):
+        return f"simdata/{prefix}_rounds{num_rounds}_mcr{num_simulations}_arms{num_items}_list{list_size}_{suffix}.npz"
+
+
+    def run_and_save_simulation_data(
+        filename,
+        bandit_class,
+        algorithms,
+        algorithm_names,
+        num_items,
+        list_size,
+        num_rounds=1000,
+        num_simulations=100,
+        means=None,
+        G=None,
+        reward_scaling=None,
+        single_hop_exploration=False,
+        save=True,
+        rng=None,
+    ):
+        data = {}
+        # Record start time
+        start_time = time.time()
+
+        # Remove file extension to get base filename
+        base_filename = os.path.splitext(filename)[0]
+
+        for algorithm_class, name in zip(algorithms, algorithm_names):
+            # Run the Monte Carlo simulation for each algorithm
+            (
+                avg_cumulative_regret,
+                percentile_2_5,
+                percentile_97_5,
+                means,
+                avg_reward,
+                percentile_2_5_reward,
+                percentile_97_5_reward,
+            ) = monte_carlo_simulation(
+                G,
+                bandit_class,
+                algorithm_class,
+                num_items,
+                list_size,
+                num_rounds,
+                num_simulations,
+                means=means,
+                reward_scaling=reward_scaling,
+                single_hop_exploration=single_hop_exploration,
+                rng=rng,
+            )
+
+            # Store data in a dictionary
+            data[name] = {
+                "means": means,
+                "avg_cumulative_regret": avg_cumulative_regret,
+                "percentile_2_5": percentile_2_5,
+                "percentile_97_5": percentile_97_5,
+                "avg_reward": avg_reward,
+                "percentile_2_5_reward": percentile_2_5_reward,
+                "percentile_97_5_reward": percentile_97_5_reward,
+            }
+
+            # Save individual algorithm data to a separate file
+            alg_filename = base_filename.format(name=name) + ".npz"
+            if save:
+                np.savez(
+                    alg_filename,
+                    avg_cumulative_regret=avg_cumulative_regret,
+                    percentile_2_5=percentile_2_5,
+                    percentile_97_5=percentile_97_5,
+                    means=means,
+                    avg_reward=avg_reward,
+                    percentile_2_5_reward=percentile_2_5_reward,
+                    percentile_97_5_reward=percentile_97_5_reward,
+                )
+            print(f"Simulation data for {name} saved to {alg_filename}")
+
+        # Record end time
+        end_time = time.time()
+        print(f"Simulation completed in {end_time - start_time:.2f} seconds.")
+
+
+    def get_params_from_filename(filename):
+        filename = os.path.splitext(filename)[0]
+        parts = filename.split("_")
+        num_arms = int(parts[3][4:])
+        list_size = int(parts[4][4:])
+        num_rounds = int(parts[1][6:])
+        num_simulations = int(parts[2][3:])
+        suffix = parts[-1]
+        return num_arms, list_size, num_rounds, num_simulations, suffix
+
+
+    def write_graphdata_to_csv(filelist: List[str], save_as: str = None):
+        labels = []
+        y_data = []
+        y_data_len = []
+
+        for filename in filelist:
+            # Check if the file exists
+            if os.path.isfile(filename):
+                (
+                    num_arms,
+                    list_size,
+                    num_rounds,
+                    num_simulations,
+                    graph_type,
+                ) = get_params_from_filename(filename)
+                data = np.load(filename, allow_pickle=True)
+                avg_cumulative_regret = data["avg_cumulative_regret"]
+                y_data.append(avg_cumulative_regret)
+                y_data_len.append(len(avg_cumulative_regret))
+                label_tmp = f"CUTS-{graph_type}-{list_size} stages"
+                labels.append(map_plot_labels(label_tmp))
+            else:
+                print(f"File {filename} not found. Skipping this file.")
+
+        # Write to csv
+        write_csv_file_multiple(
+            x_data=range(max(y_data_len)),
+            func_data=y_data,
+            filename=save_as,
+            header="round\t" + "\t".join(labels),
+            fmt=["%d"] + ["%f"] * len(labels),
+        )
+
+
+    def map_plot_labels(label):
+        if ("p0." in label) and ("1 stages" in label):
+            prob = label.split("-")[1][:6]
+            return f"UTS_{prob}_1s"
+        elif "p0." in label:
+            list_size = int(label.split("-")[2].split(" ")[0])
+            prob = label.split("-")[1][:6]
+            return f"CUTS_{prob}_{list_size}s"
+        elif ("full-wifi" in label) and ("1 stages" in label):
+            return "TS_WIFI"
+        elif "full-wifi" in label:
+            list_size = int(label.split("-")[-1].split(" ")[0])
+            return f"CTS_{list_size}s_WIFI"
+        elif ("full" in label) and ("1 stages" in label):
+            return "TS"
+        elif "full" in label:
+            list_size = int(label.split("-")[2].split(" ")[0])
+            return f"CTS_{list_size}s"
+        elif "line-csv-wifi" in label:
+            list_size = int(label.split("-")[-1].split(" ")[0])
+            return f"WIFI-CUTS_line_{list_size}s-WIFI"
+        elif "line-csv" in label:
+            list_size = int(label.split("-")[-1].split(" ")[0])
+            return f"WIFI-CUTS_line_{list_size}s"
+        elif "line" in label and ("1 stages" in label):
+            return "UTS_line"
+        elif "line" in label:
+            list_size = int(label.split("-")[2].split(" ")[0])
+            return f"CUTS-line_{list_size}s"
+        else:
+            raise ValueError(f"Unknown label: {label}")
+
+
+    def monte_carlo_simulation(
+        G,
+        bandit_class,
+        algorithm_class,
+        num_items,
+        list_size,
+        num_rounds=1000,
+        num_simulations=100,
+        means=None,
+        reward_scaling=None,
+        single_hop_exploration=False,
+        rng=None,
+    ):
+        all_regrets = []
+        all_rewards = []
+        # Initialize a new bandit and algorithm instance for each simulation run
+        bandit = bandit_class(
+            G=G, num_items=num_items, list_size=list_size, means=means, rng=rng
+        )
+        algorithm = algorithm_class(G, num_items, list_size, reward_scaling=reward_scaling)
+        if reward_scaling is None:
+            best_arm_ind = np.argsort(bandit.means)[-list_size:]
+            optimal_reward = expected_instant_reward(
+                means=bandit.means, selected_items=best_arm_ind
+            )
+        else:
+            optimal_reward, best_arm_ind = best_4_pairs(bandit.means, reward_scaling)
+
+        for sim in tqdm.tqdm(range(num_simulations), desc="Monte Carlo Runs"):
+            algorithm.reset()
+            # Run the simulation for the specified number of rounds and record cumulative regret
+            regrets = []
+            rewards = []
+            arm_history = []
+            for t in range(1, num_rounds + 1):
+                selected_items = algorithm.select_arms(
+                    t, single_hop_exploration=single_hop_exploration
+                )
+                feedback = simulate_click(bandit.means, selected_items, rng=rng)
+                arm_history.append(selected_items[feedback] if feedback != -1 else -1)
+                algorithm.update(selected_items, feedback, reward_scaling)
+
+                # Calculate cumulative regret for this round
+                if reward_scaling is None:
+                    observed_reward = 1 if feedback != -1 else 0
+                else:
+                    observed_reward = reward_scaling[selected_items[feedback]] if feedback != -1 else 0
+                # regret = optimal_reward - observed_reward
+                regret = optimal_reward - expected_instant_reward(bandit.means, selected_items)
+                regrets.append(regret)
+                rewards.append(observed_reward)
+
+            # Store cumulative regret for this simulation
+            cumulative_regret = np.cumsum(regrets)
+            all_regrets.append(cumulative_regret)
+            all_rewards.append(np.array(rewards))
+
+        # Convert all regrets and observed rewards to a NumPy array for percentile calculation
+        all_regrets = np.array(all_regrets)
+        all_rewards = np.array(all_rewards)
+
+        # Compute the mean cumulative regret
+        mean_regret = np.mean(all_regrets, axis=0)
+        # Compute the 2.5th and 97.5th percentiles for 95% confidence interval
+        lower_percentile = np.percentile(all_regrets, 2.5, axis=0)
+        upper_percentile = np.percentile(all_regrets, 97.5, axis=0)
+
+        # Compute the mean observed rewards
+        mean_rewards = np.mean(all_rewards, axis=0)
+        # Compute the 2.5th and 97.5th percentiles for observed rewards
+        lower_percentile_rewards = np.percentile(all_rewards, 2.5, axis=0)
+        upper_percentile_rewards = np.percentile(all_rewards, 97.5, axis=0)
+
+        return (
+            mean_regret,
+            lower_percentile,
+            upper_percentile,
+            bandit.means,
+            mean_rewards,
+            lower_percentile_rewards,
+            upper_percentile_rewards,
+        )
+
+
+    def expected_instant_reward(means: np.ndarray, selected_items: np.ndarray):
+        return 1 - np.prod(1 - means[selected_items])
+
+
+    def select_n_largest(data, n):
+        """
+        Find the indices (for lists) or keys (for dictionaries) of the largest `n` elements,
+        resolving ties randomly.
+
+        Parameters
+        ----------
+        data : list or dict
+            The input data structure. Can be a list of values or a dictionary where values are compared.
+        n : int
+            The number of largest elements to find.
+
+        Returns
+        -------
+        list
+            A list of indices (for lists) or keys (for dictionaries) corresponding to the largest `n` elements.
+            Ties are resolved randomly.
+        """
+        if not isinstance(data, (list, dict)):
+            raise TypeError("Input must be a list or a dictionary.")
+        if n < 0:
+            raise ValueError("`n` must be non-negative.")
+        if n == 0:
+            return []
+
+        # Instead of creating a full sorted list, we “decorate” each item with a random value
+        # to randomize tie resolution, then use heapq.nlargest to select the top n.
+        if isinstance(data, list):
+            # Each element becomes a tuple: (value, random_tiebreaker, index)
+            items = ((value, random.random(), index) for index, value in enumerate(data))
+        else:
+            # For dictionaries, each element is: (value, random_tiebreaker, key)
+            items = ((value, random.random(), key) for key, value in data.items())
+
+        # heapq.nlargest returns the n largest items (ordered in descending order)
+        # using the key (value, random_tiebreaker) to decide the ordering.
+        top_n = heapq.nlargest(n, items, key=lambda item: (item[0], item[1]))
+
+        # Extract and return the key (or index) from each tuple.
+        return [item[2] for item in top_n]
+
+
+    def simulate_click(attraction_probs, selected_items, rng=None):
+        for i, item in enumerate(selected_items):
+            if rng.binomial(1, attraction_probs[item]):
+                return i  # Clicked on item i
+        return -1  # No clicks
     return (
         CUTS,
         CascadingUnimodalBandit,
