@@ -1,8 +1,8 @@
 # WiFi-CUTS: Rate Adaptation with Cascaded Unimodal Multi-Armed Bandits in IEEE 802.11ac Testbed Experiments
 
-[![Marimo](https://img.shields.io/badge/Launch-Marimo_notebook-hsl(168%2C61%25%2C28%25))](https://marimo.app/?src=https%3A%2F%2Fraw.githubusercontent.com%2Fklb2%2Freproducible-paper-python-template%2Frefs%2Fheads%2Fmaster%2FInteractive.py)
-![GitHub](https://img.shields.io/github/license/klb2/reproducible-paper-python-template)
-[![DOI](https://img.shields.io/badge/doi-10.1109/TWC.2022.3172760-informational)](https://doi.org/10.1109/TWC.2022.3172760)
+[![Marimo](https://img.shields.io/badge/Launch-Marimo_notebook-hsl(168%2C61%25%2C28%25))](https://marimo.app/?src=https%3A%2F%2Fgithub.com%2Fle-martin%2Fcascaded-unimodal-bandits%2Fblob%2Fmaster%2FInteractive.py)
+<!-- ![GitHub](https://img.shields.io/github/license/klb2/reproducible-paper-python-template) -->
+[![DOI](https://img.shields.io/badge/doi-10.1109/TWC.2022.3172760-informational)]()
 
 
 ```diff
@@ -26,24 +26,24 @@ The following files are provided in this repository:
 ## Usage
 ### Running it online
 The easiest way is to use the official [marimo](https://marimo.app/) playground
-to run the notebook online. Simply navigate to [https://marimo.app/?src=https%3A%2F%2Fraw.githubusercontent.com%2Fklb2%2Freproducible-paper-python-template%2Frefs%2Fheads%2Fmaster%2FInteractive.py](https://marimo.app/?src=https%3A%2F%2Fraw.githubusercontent.com%2Fklb2%2Freproducible-paper-python-template%2Frefs%2Fheads%2Fmaster%2FInteractive.py)
-```diff
-! Add Marimo app link to notebook.
-```
+to run the notebook online. Simply navigate to [https://marimo.app/?src=https%3A%2F%2Fgithub.com%2Fle-martin%2Fcascaded-unimodal-bandits%2Fblob%2Fmaster%2FInteractive.py](https://marimo.app/?src=https%3A%2F%2Fgithub.com%2Fle-martin%2Fcascaded-unimodal-bandits%2Fblob%2Fmaster%2FInteractive.py)
 to run the notebooks in your browser without setting everything up locally.
 
 ### Local Installation
 If you want to run it locally on your machine, Python3 and marimo are needed.
 The present code was developed and tested with the following versions:
 ```diff
-- Python 3.13
-- numpy 2.2
-- scipy 1.15
+- Python 3.12.9
+- numpy 2.3.4
+- pandas 2.3.3
+- networkx 3.5
+- matplotlib 3.10.7
+- tqdm 4.67.1
 ```
 
 Make sure you have [Python3](https://www.python.org/downloads/) installed on
 your computer.
-You can then install the required packages by running
+You can then install the required packages by either running
 ```bash
 pip3 install -r requirements.txt
 ```
@@ -51,22 +51,22 @@ This will install all the needed packages which are listed in the requirements
 file.
 
 
-Finally, you can run the Marimo notebooks with
+For fast, guided and interactive CUTS simulations and visualization of their reward/regret performance, you can run the Marimo notebooks with
 ```bash
 marimo run Interactive.py
 ```
 
-You can also recreate the figures from the paper by running
+You can also manually run numerical simulation of CUTS by running
 ```bash
 bash run.sh
 ```
+The used bandit and graph parameters are defined in `run.sh`. Adjust them to obtain CUTS performance results for different parameter sets.
+
+The simulation results are saved in the folder `simdata`. To plot the regret/reward performance of CUTS for different parameter sets, adjust the parameter sets / scenarios to compare with each other and run `python3 plot_multi.py`.
 
 
 ## Acknowledgements
-This research was supported by
-```diff
-! Add funding information
-```
+This research was supported by the Federal Ministry of Education and Research of Germany as part of the joint project “Software-Driven Urban plus Rural Area Communication Networks (SupraCoNeX)”, project identification number: 16KIS1193, the project ML4RIS funded by German Research Foundation (DFG) under grant 566937681, and partly by the Federal Ministry of Education and Research (BMBF), Germany, through the Program of Souverän, Digital, and Vernetzt Joint Project 6G-RIC under Grant 16KISK031.
 
 
 ## License and Referencing
@@ -74,14 +74,14 @@ This program is licensed under the MIT license. If you in any way use this
 code for research that results in publications, please cite our original
 article listed above.
 
-You can use the following BibTeX entry
+<!-- You can use the following BibTeX entry
 ```bibtex
 @article{...,
   author = {...},
   title = {...},
   ...
 }
-```
+``` -->
 ```diff
 ! Add bibtex entry of the published paper
 ```

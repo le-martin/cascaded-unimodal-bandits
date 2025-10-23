@@ -1,0 +1,6 @@
+marimo
+matplotlib
+networkx
+numpy
+pandas
+tqdm
