@@ -230,19 +230,19 @@ def _(mo):
 @app.cell(hide_code=True)
 def _(mo):
     # Bandit parameters UI elements
-    num_arms_plot_number = mo.ui.number(2, 1000, value=232, label="Number of arms (min: 2, max: 1000): ")
+    num_arms_plot_number = mo.ui.number(2, 1000, value=100, label="Number of arms (min: 2, max: 1000): ")
     num_rounds_plot_number = mo.ui.number(10, 5000, value=2000, label="Number of rounds (min: 10, max: 5000): ")
-    num_monte_carlo_runs_plot_number = mo.ui.number(1, 10000, value=10000, label="Number of Monte Carlo runs (min: 1, max: 10000): ")
-    stage_1_checkbox = mo.ui.checkbox(value=True, label="1")
+    num_monte_carlo_runs_plot_number = mo.ui.number(1, 10000, value=10, label="Number of Monte Carlo runs (min: 1, max: 10000): ")
+    stage_1_checkbox = mo.ui.checkbox(label="1")
     stage_2_checkbox = mo.ui.checkbox(label="2")
     stage_3_checkbox = mo.ui.checkbox(label="3")
     stage_4_checkbox = mo.ui.checkbox(label="4")
-    graph_type_erdos_renyi_checkbox = mo.ui.checkbox(value=True, label="Erdos Renyi/Random")
-    graph_type_line_checkbox = mo.ui.checkbox(value=True, label="Line")
-    graph_type_full_checkbox = mo.ui.checkbox(value=True, label="Full/Complete")
+    graph_type_erdos_renyi_checkbox = mo.ui.checkbox(label="Erdos Renyi/Random")
+    graph_type_line_checkbox = mo.ui.checkbox(label="Line")
+    graph_type_full_checkbox = mo.ui.checkbox(label="Full/Complete")
 
     # Graph parameters UI elements
-    edge_prob_plot_number = mo.ui.number(0.01, 1, 0.01, 0.02, label="Edge probability in Erdos-Renyi/random graph (min: 0.01, max: 1): ")
+    edge_prob_plot_number = mo.ui.number(0.01, 1, 0.01, 0.2, label="Edge probability in Erdos-Renyi/random graph (min: 0.01, max: 1): ")
     plot_percentile_dropdown = mo.ui.dropdown(options=[True, False], value=False, label="Plot 95% confidence interval?")
     plot_reward_dropdown = mo.ui.dropdown(options=[True, False], value=False, label="Plot reward instead of regret?")
     return (
@@ -302,12 +302,14 @@ def _(
 @app.cell(hide_code=True)
 def _(filelist, get_params_from_filename, mo, os):
     missing_sims = [_file for _file in filelist if not os.path.isfile(_file)]
-    attention_str = "/// attention | Attention!\n The following CUTS simulations are missing: \n\n"
+    attention_str = "/// attention | Attention!\n The data of the following CUTS simulations are missing: \n\n"
     for _file in missing_sims:
         arms, stages, rounds, sims, suff = get_params_from_filename(_file)
         attention_str += f"Arms: {arms}, Stages: {stages}, Rounds: {rounds}, Monte Carlo runs: {sims}, Graph information: {suff}\n\n"
     attention_str += "///"
-    if not missing_sims:
+    if not filelist:
+        attention_str = "/// attention | Attention!\n Not enough parameters set for plotting. Please check the bandit and graph parameters (for plotting) again."
+    elif not missing_sims:
         attention_str = "/// details | All lines were successfully plotted.\n"
         for _file in filelist:
             arms, stages, rounds, sims, suff = get_params_from_filename(_file)
@@ -327,6 +329,7 @@ def _(
     num_arms_plot_number,
     num_monte_carlo_runs_plot_number,
     num_rounds_plot_number,
+    os,
     plot_from_multiple_simdatafiles,
     plot_percentile_dropdown,
     plot_reward_dropdown,
@@ -389,9 +392,13 @@ def _(
         )
         filelist.append(filename)
 
-    mo.md(
-        f"{mo.as_html(plot_from_multiple_simdatafiles(filelist=filelist, plot_percentile=plot_percentile, plot_reward=plot_reward))}"
-    )
+    one_plot_exist = sum([os.path.isfile(_f) for _f in filelist])
+
+    if filelist and one_plot_exist:
+        md_content = f"{mo.as_html(plot_from_multiple_simdatafiles(filelist=filelist, plot_percentile=plot_percentile, plot_reward=plot_reward))}"
+    else:
+        md_content = ""
+    mo.md(md_content)
     return (filelist,)
 
 
