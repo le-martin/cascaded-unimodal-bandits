@@ -73,7 +73,7 @@ This research was supported by the Federal Ministry of Education and Research of
 
 
 ## License and Referencing
-This program is licensed under the MIT license. If you in any way use this
+This program is licensed under the GPLv3 license. If you in any way use this
 code for research that results in publications, please cite our original
 article listed above.
 
