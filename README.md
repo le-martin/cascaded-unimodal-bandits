@@ -27,7 +27,7 @@ The following files are provided in this repository:
 ### Running it online
 The easiest way is to use the official [marimo](https://marimo.app/) playground
 to run the notebook online. Simply navigate to [https://marimo.app/l/ea2b05](https://marimo.app/l/ea2b05)
-to run the notebooks in your browser without setting everything up locally.
+to run the notebook in your browser without setting everything up locally.
 
 ### Local Installation
 If you want to run it locally on your machine, Python3 and marimo are needed.
