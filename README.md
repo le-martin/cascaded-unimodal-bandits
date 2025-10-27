@@ -4,23 +4,20 @@
 ![GitHub](https://img.shields.io/github/license/le-martin/cascaded-unimodal-bandits)
 <!-- [![DOI](https://img.shields.io/badge/doi-10.1109/TWC.2022.3172760-informational)]() -->
 
-
-```diff
-! Update badge information/links
-```
-
 This repository is accompanying the paper *"WiFi-CUTS: Rate Adaptation with Cascaded Unimodal Multi-Armed Bandits in IEEE 802.11ac Testbed Experiments"* (M. Le, B. Peng, E. A. Jorswieck. MONTH, IEEE Transaction on Communications. DOI-LINK).
 
 It provides an interactive and guided framework for reproducing the numerical simulations and visualizing the regret and reward performance of the Cascaded Unimodal Thompson Sampling (CUTS) algorithm proposed in our research paper.
 
 
 ## File List
-The following files are provided in this repository:
+The following files related to the numerical simulation and performance visualization are provided in this repository:
 
 - `run.sh`: Bash script that runs numerical simulations CUTS with user-defined parameters. The results are saved in the `simdata` folder and can be plotted with the `plot_multi.py` script.
 - `plot-multi.py`: Python script for plotting CUTS with different parameter sets for comparison.
 - `simdata`: Folder containing all simulation data including realized regret and graph data.
 - `Interactive.py`: Marimo notebook for fast, guided and interactive numerical simulation of CUTS and performance simulation for comparison of CUTS variants.
+
+The following provided files are 
 
 
 ## Usage
@@ -85,6 +82,3 @@ article listed above.
   ...
 }
 ``` -->
-```diff
-! Add bibtex entry of the published paper
-```
