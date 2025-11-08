@@ -2,9 +2,9 @@
 
 [![Open with marimo](https://marimo.io/shield.svg)](https://marimo.app/l/ea2b05)
 ![GitHub](https://img.shields.io/github/license/le-martin/cascaded-unimodal-bandits)
-<!-- [![DOI](https://img.shields.io/badge/doi-10.1109/TWC.2022.3172760-informational)]() -->
+[![DOI](https://img.shields.io/badge/doi-10.1109/TCOMM.2025.3628731-informational)](https://doi.org/10.1109/TCOMM.2025.3628731)
 
-This repository is accompanying the paper *"WiFi-CUTS: Rate Adaptation with Cascaded Unimodal Multi-Armed Bandits in IEEE 802.11ac Testbed Experiments"* (M. Le, B. Peng, E. A. Jorswieck. MONTH, IEEE Transaction on Communications. DOI-LINK).
+This repository is accompanying the paper *"WiFi-CUTS: Rate Adaptation with Cascaded Unimodal Multi-Armed Bandits in IEEE 802.11ac Testbed Experiments"* (M. Le, B. Peng, E. A. Jorswieck. IEEE Transactions on Communications (Early Access). [doi: 10.1109/TCOMM.2025.3628731](https://doi.org/10.1109/TCOMM.2025.3628731)).
 
 It provides an interactive and guided framework for reproducing the numerical simulations and visualizing the regret and reward performance of the Cascaded Unimodal Thompson Sampling (CUTS) algorithm proposed in our research paper.
 
@@ -74,11 +74,13 @@ This program is licensed under the GPLv3 license. If you in any way use this
 code for research that results in publications, please cite our original
 article listed above.
 
-<!-- You can use the following BibTeX entry
+You can use the following BibTeX entry
 ```bibtex
-@article{...,
-  author = {...},
-  title = {...},
-  ...
+@article{Le2025wifi,
+  author={Le, Martin and Peng, Bile and Jorswieck, Eduard A.},
+  journal={IEEE Transactions on Communications (Early Access)}, 
+  title={{WiFi-CUTS}: Rate Adaptation with Cascaded Unimodal Multi-Armed Bandits in {IEEE} 802.11ac Testbed Experiments}, 
+  year={2025},
+  doi={10.1109/TCOMM.2025.3628731}
 }
-``` -->
+```
