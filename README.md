@@ -77,10 +77,10 @@ article listed above.
 You can use the following BibTeX entry
 ```bibtex
 @article{Le2025wifi,
-  author={Le, Martin and Peng, Bile and Jorswieck, Eduard A.},
-  journal={IEEE Transactions on Communications (Early Access)}, 
-  title={{WiFi-CUTS}: Rate Adaptation with Cascaded Unimodal Multi-Armed Bandits in {IEEE} 802.11ac Testbed Experiments}, 
-  year={2025},
-  doi={10.1109/TCOMM.2025.3628731}
+	author={Le, Martin and Peng, Bile and Jorswieck, Eduard A.},
+	journal={IEEE Transactions on Communications (Early Access)}, 
+	title={{WiFi-CUTS}: Rate Adaptation with Cascaded Unimodal Multi-Armed Bandits in {IEEE} 802.11ac Testbed Experiments}, 
+	year={2025},
+	doi={10.1109/TCOMM.2025.3628731}
 }
 ```
