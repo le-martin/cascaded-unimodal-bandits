@@ -1,6 +1,6 @@
 # WiFi-CUTS: Rate Adaptation with Cascaded Unimodal Multi-Armed Bandits in IEEE 802.11ac Testbed Experiments
 
-[![Open with marimo](https://marimo.io/shield.svg)](https://marimo.app/l/ea2b05)
+[![Open with marimo](https://marimo.io/shield.svg)](https://marimo.app/l/w6zlo3)
 ![GitHub](https://img.shields.io/github/license/le-martin/cascaded-unimodal-bandits)
 [![DOI](https://img.shields.io/badge/doi-10.1109/TCOMM.2025.3628731-informational)](https://doi.org/10.1109/TCOMM.2025.3628731)
 
@@ -23,7 +23,7 @@ The following provided files are
 ## Usage
 ### Running it online
 The easiest way is to use the official [marimo](https://marimo.app/) playground
-to run the notebook online. Simply navigate to [https://marimo.app/l/ea2b05](https://marimo.app/l/ea2b05)
+to run the notebook online. Simply navigate to [https://marimo.app/l/w6zlo3](https://marimo.app/l/w6zlo3)
 to run the notebook in your browser without setting everything up locally.
 
 ### Local Installation
