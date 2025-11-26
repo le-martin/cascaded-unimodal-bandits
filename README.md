@@ -31,10 +31,12 @@ If you want to run it locally on your machine, Python3 and marimo are needed.
 The present code was developed and tested with the following versions:
 ```diff
 - Python 3.12.9
+- marimo 0.17.0
 - numpy 2.3.4
 - pandas 2.3.3
 - networkx 3.5
 - matplotlib 3.10.7
+- pyzmq 21.1.0
 - tqdm 4.67.1
 ```
 
