@@ -243,7 +243,7 @@ def _(mo):
 
     # Graph parameters UI elements
     edge_prob_plot_number = mo.ui.number(0.01, 1, 0.01, 0.2, label="Edge probability in Erdos-Renyi/random graph (min: 0.01, max: 1): ")
-    plot_percentile_dropdown = mo.ui.dropdown(options=[True, False], value=False, label="Plot 95% confidence interval?")
+    plot_percentile_dropdown = mo.ui.dropdown(options=[True, False], value=False, label="Plot 95% percentile interval?")
     plot_reward_dropdown = mo.ui.dropdown(options=[True, False], value=False, label="Plot reward instead of regret?")
     return (
         edge_prob_plot_number,
